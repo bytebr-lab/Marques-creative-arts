@@ -379,19 +379,19 @@
 </div>
 
 <!-- ÁREA ADMIN -->
-<div id="admin-view" class="hidden">
-  <div class="wrap">
-    <div id="adminLogin" class="admin-login">
-      <h2>Área da loja</h2>
-      <p>Digite a senha para gerenciar os produtos.</p>
-      <div class="field" style="text-align:left;">
-        <input type="password" id="adminPass" placeholder="Senha">
-      </div>
-      <p class="error-text" id="adminError">Senha incorreta.</p>
-      <button class="btn-mini primary" id="adminLoginBtn" style="width:100%; padding:12px;">Entrar</button>
-      <p style="margin-top:16px;"><a href="#loja" id="backToStore1" style="font-size:13px; opacity:0.6;">← voltar para a loja</a></p>
-    </div>
-
+<div id="adminLogin" class="admin-login">
+  <h2>Área da loja</h2>
+  <p>Digite seu e-mail e senha para gerenciar os produtos.</p>
+  <div class="field" style="text-align:left;">
+    <input type="email" id="adminEmail" placeholder="Seu e-mail cadastrado">
+  </div>
+  <div class="field" style="text-align:left;">
+    <input type="password" id="adminPass" placeholder="Sua senha">
+  </div>
+  <p class="error-text" id="adminError">E-mail ou senha incorretos.</p>
+  <button class="btn-mini primary" id="adminLoginBtn" style="width:100%; padding:12px;">Entrar</button>
+  <p style="margin-top:16px;"><a href="#loja" id="backToStore1" style="font-size:13px; opacity:0.6;">← voltar para a loja</a></p>
+</div>
     <div id="adminPanel" class="hidden">
       <div class="admin-bar">
         <h2>Gerenciar produtos (Nuvem)</h2>
@@ -448,12 +448,15 @@
   </div>
 </div>
 
-<!-- FIREBASE INTEGRATION SCRIPT -->
+<!-- FIREBASE INTEGRATION SCRIPT SECURE -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { 
     getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc 
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { 
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDUDXwNB8_1bj-8pE5GEke4Y2BJVnokz9E",
@@ -466,9 +469,9 @@
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const auth = getAuth(app);
   const productsRef = collection(db, "products");
 
-  const ADMIN_PASSWORD = "marques2026";
   let products = [];
   let cart = {}; 
   let currentFilter = "Todos";
@@ -492,16 +495,29 @@
     return d.innerHTML;
   }
 
-  // SINCRONIZAÇÃO EM TEMPO REAL FIRESTORE
+  // MONITORAR SESSÃO DO ADMIN
+  onAuthStateChanged(auth, (user) => {
+    const loginForm = document.getElementById("adminLogin");
+    const adminPanel = document.getElementById("adminPanel");
+    
+    if (user) {
+      loginForm?.classList.add("hidden");
+      adminPanel?.classList.remove("hidden");
+      renderAdminList();
+    } else {
+      loginForm?.classList.remove("hidden");
+      adminPanel?.classList.add("hidden");
+    }
+  });
+
+  // CARREGAR PRODUTOS EM TEMPO REAL
   onSnapshot(productsRef, (snapshot) => {
     products = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
     renderProducts();
-    renderAdminList();
-  }, (error) => {
-    console.error("Erro no Firestore:", error);
+    if (auth.currentUser) renderAdminList();
   });
 
   function renderFilters() {
@@ -719,16 +735,20 @@
   document.getElementById("backToStore1")?.addEventListener("click", (e) => { e.preventDefault(); window.location.hash = "loja"; });
   document.getElementById("backToStore2")?.addEventListener("click", (e) => { e.preventDefault(); window.location.hash = "loja"; });
 
-  document.getElementById("adminLoginBtn")?.addEventListener("click", () => {
+  // LOGIN SEGURO VIA FIREBASE AUTH
+  document.getElementById("adminLoginBtn")?.addEventListener("click", async () => {
+    const email = document.getElementById("adminEmail")?.value.trim();
     const pass = document.getElementById("adminPass")?.value;
     const err = document.getElementById("adminError");
-    if (pass === ADMIN_PASSWORD) {
+    
+    try {
+      await signInWithEmailAndPassword(auth, email, pass);
       if(err) err.style.display = "none";
-      document.getElementById("adminLogin")?.classList.add("hidden");
-      document.getElementById("adminPanel")?.classList.remove("hidden");
-      renderAdminList();
-    } else {
-      if(err) err.style.display = "block";
+    } catch (e) {
+      if(err) {
+        err.textContent = "E-mail ou senha incorretos.";
+        err.style.display = "block";
+      }
     }
   });
 
@@ -770,7 +790,7 @@
       }
       resetForm();
     } catch (e) {
-      alert("Erro ao salvar. Verifique se o site está rodando online em um servidor web.");
+      alert("Erro de permissão: você precisa estar logado como Administrador para alterar produtos.");
       console.error(e);
     }
   });
