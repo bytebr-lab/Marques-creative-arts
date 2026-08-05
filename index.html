@@ -185,15 +185,38 @@
 
   .contact-box{
     background:var(--bg-card); border:1px solid var(--line); border-radius:30px;
-    padding:44px 36px; display:grid; grid-template-columns:1.1fr 0.9fr; gap:32px; align-items:center;
+    padding:48px 40px; display:grid; grid-template-columns:1.1fr 0.9fr; gap:32px; align-items:center;
+    position:relative; overflow:hidden;
   }
+  .contact-box::before{
+    content:""; position:absolute; top:-60px; right:-60px; width:220px; height:220px; border-radius:50%;
+    background:radial-gradient(closest-side, var(--pink-soft), transparent 75%); pointer-events:none;
+  }
+  .contact-box > *{ position:relative; z-index:1; }
   .contact-box h2{ font-family:'Fraunces', serif; font-weight:600; font-size:clamp(22px,3vw,28px); color:var(--purple-deep); margin-bottom:12px; }
-  .contact-box p{ color:var(--purple-ink); opacity:0.75; font-size:14.5px; max-width:40ch; margin-bottom:20px; }
-  .info-list{ display:flex; flex-direction:column; gap:12px; }
+  .contact-box p{ color:var(--purple-ink); opacity:0.75; font-size:14.5px; max-width:40ch; margin-bottom:0; }
+  .info-list{ display:flex; gap:16px; justify-content:flex-start; flex-wrap:wrap; }
   .info-row{
-    display:flex; align-items:center; gap:12px; background:var(--pink-soft); padding:13px 16px; border-radius:14px;
-    font-size:14px; font-weight:500; text-decoration:none; color:var(--purple-ink);
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+    width:120px; padding:22px 12px; border-radius:20px; background:var(--pink-soft);
+    text-decoration:none; color:var(--purple-ink); text-align:center;
+    transition: transform .18s ease, background .18s ease, box-shadow .18s ease;
   }
+  .info-row:hover{ transform:translateY(-3px); box-shadow:0 14px 24px -14px rgba(91,52,148,0.35); }
+  .info-row .icon-circle{
+    width:50px; height:50px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; transition: background .18s ease;
+  }
+  .info-row .icon-circle svg{ width:24px; height:24px; }
+  .info-row.wa .icon-circle{ color:var(--green-wa); }
+  .info-row.wa:hover{ background:var(--green-wa); }
+  .info-row.wa:hover .icon-circle{ background:#fff; }
+  .info-row.wa:hover span{ color:#fff; }
+  .info-row.ig .icon-circle{ color:#C93B8F; }
+  .info-row.ig:hover{ background:linear-gradient(135deg,#4f5bd5,#962fbf,#d62976,#fa7e1e,#feda75); }
+  .info-row.ig:hover .icon-circle{ background:#fff; }
+  .info-row.ig:hover span{ color:#fff; }
+  .info-row span{ font-size:12.5px; font-weight:600; transition:color .18s ease; }
 
   footer{ border-top:1px solid var(--line); padding:26px 0; }
   footer .wrap{ display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
@@ -210,6 +233,8 @@
   .admin-actions{ display:flex; gap:10px; flex-wrap:wrap; }
   .btn-mini{ padding:9px 16px; border-radius:10px; font-size:13px; font-weight:600; border:1.5px solid var(--line); background:#fff; text-decoration:none; color:var(--purple-ink); display:inline-flex; align-items:center; }
   .btn-mini.primary{ background:var(--purple-deep); color:#fff; border-color:var(--purple-deep); }
+  .btn-mini.danger{ background:#fff; color:#C0356B; border-color:#f0c4d6; }
+  .btn-mini.danger:hover{ background:#fdeaf1; }
   .admin-grid{ display:grid; grid-template-columns:0.9fr 1.1fr; gap:28px; align-items:start; }
   .admin-form{ background:#fff; border:1px solid var(--line); border-radius:20px; padding:24px; position:sticky; top:96px; }
   .admin-form h3{ font-family:'Fraunces', serif; font-size:17px; color:var(--purple-deep); margin-bottom:16px; }
@@ -232,10 +257,17 @@
   @media (max-width: 880px){
     .grid-prod{ grid-template-columns:repeat(2,1fr); }
     .steps{ grid-template-columns:1fr; gap:32px; }
-    .contact-box{ grid-template-columns:1fr; }
+    .contact-box{ grid-template-columns:1fr; padding:36px 26px; text-align:center; }
+    .contact-box p{ max-width:none; margin:0 auto; }
+    .info-list{ justify-content:center; margin-top:24px; }
     .admin-grid{ grid-template-columns:1fr; }
     .admin-form{ position:static; }
     nav ul{ display:none; }
+  }
+
+  @media (max-width: 420px){
+    .info-list{ gap:14px; }
+    .info-row{ width:104px; padding:18px 10px; }
   }
 </style>
 </head>
@@ -310,8 +342,25 @@
         <p>Fale direto com a gente pelo WhatsApp ou dá uma olhada no Instagram.</p>
       </div>
       <div class="info-list">
-        <a href="https://wa.me/5591984141196" target="_blank" rel="noopener" class="info-row">📱 +55 91 98414-1196</a>
-        <a href="https://www.instagram.com/marques.creativearts_/" target="_blank" rel="noopener" class="info-row">📷 instagram.com/marques.creativearts_</a>
+        <a href="https://wa.me/5591984141196" target="_blank" rel="noopener" class="info-row wa" aria-label="Falar no WhatsApp">
+          <span class="icon-circle">
+            <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.472-.148-.67.15-.198.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.372-.025-.521-.075-.148-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.876 1.213 3.074.148.198 2.095 3.2 5.076 4.487.71.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/>
+              <path d="M12.001 2C6.478 2 2 6.477 2 12c0 1.987.577 3.84 1.573 5.4L2 22l4.708-1.535A9.94 9.94 0 0 0 12.001 22C17.523 22 22 17.523 22 12S17.523 2 12.001 2zm0 18.09a8.06 8.06 0 0 1-4.32-1.246l-.31-.19-3.14 1.023 1.033-3.06-.202-.315A8.06 8.06 0 0 1 3.91 12c0-4.464 3.628-8.09 8.091-8.09 4.464 0 8.09 3.626 8.09 8.09 0 4.463-3.626 8.09-8.09 8.09z"/>
+            </svg>
+          </span>
+          <span>WhatsApp</span>
+        </a>
+        <a href="https://www.instagram.com/marques.creativearts_/" target="_blank" rel="noopener" class="info-row ig" aria-label="Ver Instagram">
+          <span class="icon-circle">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="5"/>
+              <circle cx="12" cy="12" r="4"/>
+              <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor" stroke="none"/>
+            </svg>
+          </span>
+          <span>Instagram</span>
+        </a>
       </div>
     </div>
   </div>
@@ -403,6 +452,7 @@
             <input type="file" id="importInput" accept="application/json" class="hidden">
           </label>
           <a href="#loja" id="backToStore2" class="btn-mini">← Ver loja</a>
+          <button class="btn-mini danger" id="logoutBtn">🔒 Sair</button>
         </div>
       </div>
 
@@ -457,7 +507,8 @@
     getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc 
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
   import { 
-    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut 
+    getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
+    setPersistence, browserSessionPersistence
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -473,6 +524,10 @@
   const db = getFirestore(app);
   const auth = getAuth(app);
   const productsRef = collection(db, "products");
+
+  // Persistência apenas na sessão do navegador: ao fechar a aba/navegador,
+  // o login expira e a senha volta a ser pedida na próxima visita.
+  setPersistence(auth, browserSessionPersistence).catch((e) => console.error(e));
 
   let products = [];
   let cart = {}; 
@@ -509,6 +564,8 @@
     } else {
       loginForm?.classList.remove("hidden");
       adminPanel?.classList.add("hidden");
+      const passField = document.getElementById("adminPass");
+      if (passField) passField.value = "";
     }
   });
 
@@ -744,6 +801,7 @@
     const err = document.getElementById("adminError");
     
     try {
+      await setPersistence(auth, browserSessionPersistence);
       await signInWithEmailAndPassword(auth, email, pass);
       if(err) err.style.display = "none";
     } catch (e) {
@@ -752,6 +810,12 @@
         err.style.display = "block";
       }
     }
+  });
+
+  // LOGOUT
+  document.getElementById("logoutBtn")?.addEventListener("click", async () => {
+    await signOut(auth);
+    window.location.hash = "loja";
   });
 
   document.getElementById("pImage")?.addEventListener("change", (e) => {
