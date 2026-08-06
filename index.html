@@ -65,7 +65,7 @@
     background: radial-gradient(closest-side, var(--lav-mid) 0%, rgba(201,166,236,0.35) 45%, rgba(201,166,236,0) 75%);
     z-index:0; pointer-events:none;
   }
-  .hero .wrap{ position:relative; z-index:1; padding:62px 28px 50px; text-align:center; }
+  .hero .wrap{ position:relative; z-index:1; padding:62px 28px 40px; text-align:center; }
   .eyebrow{ font-weight:700; font-size:12.5px; letter-spacing:0.22em; color:var(--pink); margin-bottom:14px; }
   .hero h1{
     font-family:'Fraunces', serif; font-weight:600; font-size:clamp(30px, 5vw, 48px);
@@ -73,8 +73,16 @@
   }
   .hero p{ color:var(--purple-ink); opacity:0.75; max-width:48ch; margin:0 auto; font-size:15.5px; }
 
-  /* filtros */
-  .filters{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:30px 0 6px; }
+  /* busca e filtros */
+  .search-box{ max-width:480px; margin:24px auto 0; position:relative; }
+  .search-box input{
+    width:100%; padding:12px 18px 12px 42px; border:1.5px solid var(--line); border-radius:100px;
+    font-size:14px; color:var(--purple-ink); background:#fff; outline:none; transition:border-color .15s;
+  }
+  .search-box input:focus{ border-color:var(--purple-deep); }
+  .search-icon{ position:absolute; left:16px; top:50%; transform:translateY(-50%); opacity:0.4; font-size:14px; }
+
+  .filters{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding:20px 0 6px; }
   .filter-btn{
     padding:9px 18px; border-radius:100px; border:1.5px solid var(--line); font-size:13.5px; font-weight:500;
     background:#fff; color:var(--purple-ink); transition: all .15s ease;
@@ -106,6 +114,25 @@
   }
   .add-btn:hover{ background:var(--purple-ink); }
   .empty-msg{ text-align:center; color:var(--purple-ink); opacity:0.6; padding:40px 0; grid-column:1/-1; }
+
+  /* CONTROLES DA PAGINAÇÃO (<  Página 1  >) */
+  .pagination-wrap{
+    display:flex; align-items:center; justify-content:center; gap:16px; margin-top:36px;
+  }
+  .page-btn{
+    width:42px; height:42px; border-radius:50%; background:#fff; border:1.5px solid var(--purple-deep);
+    color:var(--purple-deep); font-size:18px; font-weight:bold; display:flex; align-items:center; justify-content:center;
+    transition:all .15s ease; cursor:pointer;
+  }
+  .page-btn:hover:not(:disabled){ background:var(--purple-deep); color:#fff; }
+  .page-btn:disabled{ opacity:0.3; cursor:not-allowed; border-color:var(--line); color:var(--purple-ink); }
+  .page-info{ font-size:14px; font-weight:600; color:var(--purple-deep); }
+
+  /* skeleton loader */
+  .skeleton-card{ background:#fff; border:1px solid var(--line); border-radius:var(--radius); height:330px; overflow:hidden; }
+  .skeleton-img{ height:150px; background: linear-gradient(90deg, #f0e8fa 25%, #e5d9f5 50%, #f0e8fa 75%); background-size:200% 100%; animation:loading 1.5s infinite; }
+  .skeleton-text{ height:12px; margin:14px; border-radius:6px; background: linear-gradient(90deg, #f0e8fa 25%, #e5d9f5 50%, #f0e8fa 75%); background-size:200% 100%; animation:loading 1.5s infinite; }
+  @keyframes loading { 0%{ background-position:200% 0; } 100%{ background-position:-200% 0; } }
 
   /* cart drawer */
   .overlay{
@@ -293,8 +320,13 @@
   <div class="glow"></div>
   <div class="wrap">
     <p class="eyebrow">PERSONALIZADOS COM CARINHO</p>
-    <h1>Escolha, adicione ao carrinho e receba pelo WhatsApp</h1>
+    <h1>Marques Creative Arts</h1>
     <p>Photocards, convites, adesivos e papelaria digital feitos sob encomenda.</p>
+    
+    <div class="search-box">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchInput" placeholder="Buscar produtos...">
+    </div>
   </div>
 </section>
 
@@ -305,6 +337,13 @@
 <section class="products">
   <div class="wrap">
     <div class="grid-prod" id="productGrid"></div>
+    
+    <!-- CONTROLES DE NAVEGAÇÃO COM SETAS EM PÁGINAS DE 10 ITENS -->
+    <div class="pagination-wrap hidden" id="paginationWrap">
+      <button class="page-btn" id="prevPageBtn" aria-label="Página anterior">‹</button>
+      <span class="page-info" id="pageInfo">Página 1 de 1</span>
+      <button class="page-btn" id="nextPageBtn" aria-label="Próxima página">›</button>
+    </div>
   </div>
 </section>
 
@@ -427,7 +466,7 @@
   </div>
 </div>
 
-<!-- ÁREA ADMIN (isolada, escondida por padrão, só aparece em #admin) -->
+<!-- ÁREA ADMIN -->
 <div id="admin-view" class="hidden">
 <div class="wrap">
 <div id="adminLogin" class="admin-login">
@@ -500,12 +539,15 @@
   </div>
 </div>
 
-<!-- FIREBASE INTEGRATION SCRIPT SECURE -->
+<!-- FIREBASE INTEGRATION SCRIPT -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { 
-    getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc 
+    initializeFirestore, persistentLocalCache, collection, onSnapshot, getDocs, addDoc, doc, updateDoc, deleteDoc 
   } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  import { 
+    getStorage, ref, uploadBytes, getDownloadURL 
+  } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
   import { 
     getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut,
     setPersistence, browserSessionPersistence
@@ -521,20 +563,27 @@
   };
 
   const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+  const db = initializeFirestore(app, { localCache: persistentLocalCache() });
+  const storage = getStorage(app);
   const auth = getAuth(app);
   const productsRef = collection(db, "products");
 
-  // Persistência apenas na sessão do navegador: ao fechar a aba/navegador,
-  // o login expira e a senha volta a ser pedida na próxima visita.
   setPersistence(auth, browserSessionPersistence).catch((e) => console.error(e));
 
   let products = [];
   let cart = {}; 
   let currentFilter = "Todos";
+  let searchQuery = "";
+  
+  // PAGINAÇÃO DE 10 EM 10
+  let currentPage = 1;
+  const ITEMS_PER_PAGE = 10;
+
   let editingId = null;
   let deliveryType = "Retirada";
-  let pendingImageData = "";
+  let selectedFile = null;
+  let currentImageUrl = "";
+  let unsubscribeAdmin = null;
 
   const categories = [
     "Todos", "Papelaria Personalizada", "Festas & Eventos", 
@@ -552,6 +601,40 @@
     return d.innerHTML;
   }
 
+  function compressImage(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          let width = img.width;
+          let height = img.height;
+          const maxDim = 800;
+
+          if (width > height && width > maxDim) {
+            height = Math.round((height * maxDim) / width);
+            width = maxDim;
+          } else if (height > maxDim) {
+            width = Math.round((width * maxDim) / height);
+            height = maxDim;
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            resolve(blob);
+          }, "image/webp", 0.85);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   // MONITORAR SESSÃO DO ADMIN
   onAuthStateChanged(auth, (user) => {
     const loginForm = document.getElementById("adminLogin");
@@ -560,24 +643,63 @@
     if (user) {
       loginForm?.classList.add("hidden");
       adminPanel?.classList.remove("hidden");
-      renderAdminList();
+      
+      if (!unsubscribeAdmin) {
+        unsubscribeAdmin = onSnapshot(productsRef, (snapshot) => {
+          products = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          renderProducts();
+          renderAdminList();
+        });
+      } else {
+        renderAdminList();
+      }
     } else {
       loginForm?.classList.remove("hidden");
       adminPanel?.classList.add("hidden");
+      
+      if (unsubscribeAdmin) {
+        unsubscribeAdmin();
+        unsubscribeAdmin = null;
+      }
+      
       const passField = document.getElementById("adminPass");
       if (passField) passField.value = "";
     }
   });
 
-  // CARREGAR PRODUTOS EM TEMPO REAL
-  onSnapshot(productsRef, (snapshot) => {
-    products = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    renderProducts();
-    if (auth.currentUser) renderAdminList();
-  });
+  function showSkeleton() {
+    const grid = document.getElementById("productGrid");
+    if(!grid) return;
+    grid.innerHTML = "";
+    for (let i = 0; i < 4; i++) {
+      const card = document.createElement("div");
+      card.className = "skeleton-card";
+      card.innerHTML = `
+        <div class="skeleton-img"></div>
+        <div class="skeleton-text" style="width:40%;"></div>
+        <div class="skeleton-text" style="width:70%;"></div>
+        <div class="skeleton-text" style="width:30%;"></div>
+      `;
+      grid.appendChild(card);
+    }
+  }
+
+  async function loadProductsPublic() {
+    showSkeleton();
+    try {
+      const snapshot = await getDocs(productsRef);
+      products = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      renderProducts();
+    } catch (e) {
+      console.error("Erro ao carregar produtos:", e);
+    }
+  }
 
   function renderFilters() {
     const el = document.getElementById("filters");
@@ -587,23 +709,48 @@
       const b = document.createElement("button");
       b.className = "filter-btn" + (c === currentFilter ? " active" : "");
       b.textContent = c;
-      b.onclick = () => { currentFilter = c; renderFilters(); renderProducts(); };
+      b.onclick = () => { 
+        currentFilter = c; 
+        currentPage = 1; // Reseta para a primeira página ao trocar de categoria
+        renderFilters(); 
+        renderProducts(); 
+      };
       el.appendChild(b);
     });
   }
 
+  // RENDERIZAÇÃO EM GRID COM PÁGINAS DE 10 EM 10
   function renderProducts() {
     const grid = document.getElementById("productGrid");
+    const paginationWrap = document.getElementById("paginationWrap");
     if(!grid) return;
     grid.innerHTML = "";
-    const list = products.filter(p => currentFilter === "Todos" || p.cat === currentFilter);
     
-    if (list.length === 0) {
-      grid.innerHTML = '<p class="empty-msg">Nenhum produto cadastrado ainda.</p>';
+    // Filtra produtos de acordo com a categoria e busca
+    const filteredList = products.filter(p => {
+      const matchesCategory = currentFilter === "Todos" || p.cat === currentFilter;
+      const matchesSearch = !searchQuery || 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (p.desc && p.desc.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    });
+    
+    if (filteredList.length === 0) {
+      grid.innerHTML = '<p class="empty-msg">Nenhum produto encontrado.</p>';
+      if(paginationWrap) paginationWrap.classList.add("hidden");
       return;
     }
 
-    list.forEach(p => {
+    // Cálculo das páginas
+    const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const pageItems = filteredList.slice(startIndex, endIndex);
+
+    pageItems.forEach(p => {
       const card = document.createElement("div");
       card.className = "prod-card";
       const imgStyle = p.image ? `style="background-image:url(${p.image})"` : "";
@@ -627,7 +774,57 @@
         openCart();
       };
     });
+
+    // ATUALIZA OS BOTOES DE NAVEGAÇÃO DA PAGINAÇÃO (<  Página X de Y  >)
+    if (paginationWrap) {
+      if (totalPages > 1) {
+        paginationWrap.classList.remove("hidden");
+        
+        const prevBtn = document.getElementById("prevPageBtn");
+        const nextBtn = document.getElementById("nextPageBtn");
+        const pageInfo = document.getElementById("pageInfo");
+
+        if(pageInfo) pageInfo.textContent = `Página ${currentPage} de ${totalPages}`;
+        if(prevBtn) prevBtn.disabled = (currentPage === 1);
+        if(nextBtn) nextBtn.disabled = (currentPage === totalPages);
+      } else {
+        paginationWrap.classList.add("hidden");
+      }
+    }
   }
+
+  // EVENTOS DAS SETAS DE PAGINAÇÃO (< e >)
+  document.getElementById("prevPageBtn")?.addEventListener("click", () => {
+    if (currentPage > 1) {
+      currentPage--;
+      renderProducts();
+      document.getElementById("loja")?.scrollIntoView({ behavior: "smooth" });
+    }
+  });
+
+  document.getElementById("nextPageBtn")?.addEventListener("click", () => {
+    const filteredList = products.filter(p => {
+      const matchesCategory = currentFilter === "Todos" || p.cat === currentFilter;
+      const matchesSearch = !searchQuery || 
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        (p.desc && p.desc.toLowerCase().includes(searchQuery.toLowerCase()));
+      return matchesCategory && matchesSearch;
+    });
+    const totalPages = Math.ceil(filteredList.length / ITEMS_PER_PAGE);
+
+    if (currentPage < totalPages) {
+      currentPage++;
+      renderProducts();
+      document.getElementById("loja")?.scrollIntoView({ behavior: "smooth" });
+    }
+  });
+
+  // BUSCA
+  document.getElementById("searchInput")?.addEventListener("input", (e) => {
+    searchQuery = e.target.value.trim();
+    currentPage = 1;
+    renderProducts();
+  });
 
   function cartTotalCount() {
     return Object.values(cart).reduce((a, b) => a + b, 0);
@@ -794,7 +991,7 @@
   document.getElementById("backToStore1")?.addEventListener("click", (e) => { e.preventDefault(); window.location.hash = "loja"; });
   document.getElementById("backToStore2")?.addEventListener("click", (e) => { e.preventDefault(); window.location.hash = "loja"; });
 
-  // LOGIN SEGURO VIA FIREBASE AUTH
+  // LOGIN ADMIN
   document.getElementById("adminLoginBtn")?.addEventListener("click", async () => {
     const email = document.getElementById("adminEmail")?.value.trim();
     const pass = document.getElementById("adminPass")?.value;
@@ -818,15 +1015,16 @@
     window.location.hash = "loja";
   });
 
+  // UPLOAD DE IMAGEM
   document.getElementById("pImage")?.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    selectedFile = file;
     const reader = new FileReader();
     reader.onload = (evt) => {
-      pendingImageData = evt.target.result;
       const prev = document.getElementById("imgPreview");
       if(prev) {
-        prev.style.backgroundImage = `url(${pendingImageData})`;
+        prev.style.backgroundImage = `url(${evt.target.result})`;
         prev.textContent = "";
       }
     };
@@ -839,6 +1037,7 @@
     const desc = document.getElementById("pDesc")?.value.trim();
     const price = parseFloat(document.getElementById("pPrice")?.value);
     const err = document.getElementById("prodError");
+    const saveBtn = document.getElementById("saveProdBtn");
 
     if (!name || isNaN(price) || price < 0) {
       if(err) err.style.display = "block";
@@ -846,9 +1045,21 @@
     }
     if(err) err.style.display = "none";
 
-    const payload = { name, cat, desc, price, image: pendingImageData };
+    saveBtn.disabled = true;
+    saveBtn.textContent = "Salvando...";
 
     try {
+      let imageUrl = currentImageUrl;
+
+      if (selectedFile) {
+        const compressedBlob = await compressImage(selectedFile);
+        const storageRef = ref(storage, `products/${Date.now()}_${selectedFile.name}`);
+        await uploadBytes(storageRef, compressedBlob);
+        imageUrl = await getDownloadURL(storageRef);
+      }
+
+      const payload = { name, cat, desc, price, image: imageUrl };
+
       if (editingId) {
         await updateDoc(doc(db, "products", editingId), payload);
       } else {
@@ -856,8 +1067,11 @@
       }
       resetForm();
     } catch (e) {
-      alert("Erro de permissão: você precisa estar logado como Administrador para alterar produtos.");
+      alert("Erro ao salvar produto. Verifique se está logado.");
       console.error(e);
+    } finally {
+      saveBtn.disabled = false;
+      saveBtn.textContent = editingId ? "Salvar alterações" : "Adicionar produto";
     }
   });
 
@@ -865,7 +1079,8 @@
 
   function resetForm() {
     editingId = null;
-    pendingImageData = "";
+    selectedFile = null;
+    currentImageUrl = "";
     document.getElementById("formTitle").textContent = "Novo produto";
     document.getElementById("pName").value = "";
     document.getElementById("pDesc").value = "";
@@ -912,7 +1127,8 @@
         document.getElementById("pCat").value = p.cat;
         document.getElementById("pDesc").value = p.desc;
         document.getElementById("pPrice").value = p.price;
-        pendingImageData = p.image || "";
+        currentImageUrl = p.image || "";
+        selectedFile = null;
         const prev = document.getElementById("imgPreview");
         if (p.image) {
           prev.style.backgroundImage = `url(${p.image})`;
@@ -969,6 +1185,7 @@
   });
 
   // INICIALIZAÇÃO
+  loadProductsPublic();
   renderFilters();
   renderCart();
   checkRoute();
